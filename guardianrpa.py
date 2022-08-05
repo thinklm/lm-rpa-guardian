@@ -12,21 +12,24 @@ from datetime import datetime
 class GuardianDriver:
     def __init__(self) -> None:    # OK   
         self.driver = self.__init_driver()
+        
 
 
 
 
     def __init_driver(self) -> webdriver.chrome.webdriver.WebDriver:
-        print(" -> Iniciando webdriver Chrome")
+        """Setup and init Chrome Webdriver
+
+        Returns:
+            webdriver.chrome.webdriver.WebDriver: Chrome Webdriver instance to handle automations.
+        """
+        # print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tIniciando Webdriver")
 
         options = webdriver.ChromeOptions()
         options.add_argument(r"--user-data-dir=C:\Users\LMEng\AppData\Local\Google\Chrome\User Data")
         options.add_argument(r"--profile-directory=Profile 1")
-        # options.add_argument("--headless")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--no-sandbox")
-        # prefs = {'download.default_directory' : r'D:\Emanuel\Projetos\EmAndamento\lm-PIs-think\base'}
-        # options.add_experimental_option('prefs', prefs)
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
         return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -34,8 +37,11 @@ class GuardianDriver:
 
 
 
-    def bypass_auth (self) -> None:       # OK
-        print("\t Realizando o bypass no SSO da Microsoft...")
+    def __bypass_auth (self) -> None:
+        """Bypass Microsoft SSO chached on --user-dir if token expired (daily). 
+        It requires the user to confirm again on Authenticator App monthly.
+        """
+        # print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tRealizando o bypass no SSO da Microsoft")
 
         account_xpath = '//*[@id="tilesHolder"]/div[1]/div/div[1]'
         try:
@@ -53,8 +59,10 @@ class GuardianDriver:
 
 
 
-    def guardian_login(self) -> None:         # OK
-        print("\t -> Realizando o login no Guardian...")
+    def __guardian_login(self) -> None:
+        """Logs into Guardian Website via SSO.
+        """
+        print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tRealizando o login no Guardian")
 
         try:
             token_notification_xpath = "/nz-notification/div/div/div/div/div[2]"
@@ -84,13 +92,16 @@ class GuardianDriver:
                 print("Ainda na página de Login!")
             elif "https://login.microsoftonline.com/" in self.driver.current_url:
                 print("Login Automático Falhou!")
-                self.bypass_auth()
+                self.__bypass_auth()
 
 
 
 
-    def enter_reports_view (self) -> None:   # OK
-        print("\t -> Entrando na view de relatorios do guardian...")
+    def enter_reports_view (self) -> None:
+        """Access Reports view page from the website.
+        """
+        print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tEntrando na view de relatorios do Guardian")
+        
         try:
             self.driver.get("https://guardian.ambev.com.br/report")  
             self.driver.implicitly_wait(0.5)
@@ -101,16 +112,19 @@ class GuardianDriver:
 
         finally:
             if self.driver.current_url == "https://guardian.ambev.com.br/login":
-                self.guardian_login()
+                self.__guardian_login()
                 self.enter_reports_view()
             
 
 
 
-    def select_date (self) -> None:       # OK
-        print("\t Selecionando intervalo de datas...")
+    def select_date (self) -> None:
+        """Select date range for the reports.
+        It was set up to gather the current year data.
+        """
+        print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tSelecionando intervalo de datas dos relatorios")
 
-        primeiro_dia_mes = datetime.today().replace(day=1)
+        primeiro_dia_ano = datetime.today().replace(day=1, month=1)
         data_inicial_xpath = "/html/body/guardian-root/ng-component/div/div/guardian-reports/div/form/div/div/div/div[1]/div[1]/div[1]/nz-form-item/nz-form-control/div/div/nz-range-picker/div[1]/input"
         data_final_xpath = "/html/body/guardian-root/ng-component/div/div/guardian-reports/div/form/div/div/div/div[1]/div[1]/div[1]/nz-form-item/nz-form-control/div/div/nz-range-picker/div[3]/input"
         
@@ -122,7 +136,7 @@ class GuardianDriver:
             action = ActionChains(self.driver)
 
             action.move_to_element(element).click()
-            action.send_keys(primeiro_dia_mes.strftime("%d/%m/%Y"))
+            action.send_keys(primeiro_dia_ano.strftime("%d/%m/%Y"))
             action.perform()
 
         except Exception as e:
@@ -147,8 +161,10 @@ class GuardianDriver:
 
 
 
-    def select_area (self):       # OK
-        print("\t Selecionando a área...")
+    def select_area (self) -> None:
+        """Select Reports Area field and sets it to "Todas as Áreas"
+        """
+        print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tSelecionando \"Todas as Areas\"")
 
         # Abrir o menu dropdown
         area_xpath = "/html/body/guardian-root/ng-component/div/div/guardian-reports/div/form/div/div/div/div[1]/div[1]/div[2]/div/nz-select/nz-select-top-control/nz-select-search"
@@ -189,8 +205,13 @@ class GuardianDriver:
 
 
 
-    def select_report_type (self, tipo:str="ato") -> None:        # OK
-        print(f"\t Selecionando tipo de relato: {tipo}")
+    def select_report_type (self, tipo:str="ato") -> None:
+        """Choose the report type from the options.
+
+        Args:
+            tipo (str, optional): Report type ("ato", "incidente, "reconhecimento"). Defaults to "ato".
+        """
+        print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tSelecionando tipo de relato: {tipo}")
 
         relato_map = {"ato": 1, "incidente": 3, "reconhecimento": 4}
         relato_xpath = f"/html/body/guardian-root/ng-component/div/div/guardian-reports/div/form/div/div/div/div[1]/div[2]/guardian-radio-button-group/form/div/div/nz-form-control/div/div/nz-radio-group/label[{relato_map[tipo]}]/span[1]"
@@ -209,11 +230,11 @@ class GuardianDriver:
 
 
 
-    def press_export_button (self) -> None:       # OK
-        """Click on export button to generate csv/xlsx file
+    def press_export_button (self) -> None:
+        """Click on export button to generate csv/xlsx file.
         """
-        print("\t\tBaixando...")
-
+        print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tBaixando Arquivo")
+        
         bt_export_xpath = "/html/body/guardian-root/ng-component/div/div/guardian-reports/div/form/div/div/div/div[2]/div[2]/button"
         try:
             WebDriverWait(self.driver, 5).until(
@@ -225,8 +246,32 @@ class GuardianDriver:
             print(f"Erro ao exportar CSV: {e}")
 
 
+
+    
+    # def __finish_downloads (self) -> None:
+    #     if not self.driver.current_url.startswith ("chrome://downloads"):
+    #         self.driver.get("chrome://downloads/")
+    #     return self.driver.execute_script("""
+    #         var items = document.querySelector('downloads-manager')
+    #             .shadowRoot.getElementById('downloadsList').items;
+    #         if (items.every(e => e.state === "COMPLETE"))
+    #             return items.map(e => e.fileUrl || e.file_url);
+    #         """)
+
+
+
+
+    # def wait_downloads_finish (self) -> None:
+    #     paths = WebDriverWait(self.driver, 120, 1).until(self.__finish_downloads)
+    #     print(paths)
+
+
+
+
     def quit_driver (self) -> None:
-        print("\t Saindo do driver do Chrome...\n\n")
+        """Close and quit Chrome Webdriver.
+        """
+        print(f"[{datetime.now().strftime('%d/%m/%Y')}] - Saindo do Driver do Chrome.")
         self.driver.close()
         self.driver.quit()
 
@@ -241,17 +286,20 @@ if __name__ == "__main__":
     # Acessa a view de relatórios e realizar login SSO, se necessário
     driver.enter_reports_view()
 
-    driver.select_area()                     # Seleciona Área (Todas as Áreas)
+    driver.select_area()
+
     # Configurações de Data dos Relatórios
     driver.select_date()      
 
     # Baixa os relatórios por tipo
     for tipo in ["ato", "incidente", "reconhecimento"]:        
-        driver.select_report_type(tipo=tipo)   # Seleciona Tipo de Relato
-        # driver.select_area()                     # Seleciona Área (Todas as Áreas)
-        driver.press_export_button()             # Exporta Arquivo
+        driver.select_report_type(tipo=tipo)
+        driver.press_export_button()
         sleep(.5)
-
     sleep(.5)
+
+    # TESTE - Espera os downloads acabarem
+    # driver.wait_downloads_finish()
+
     # Fecha o driver
     driver.quit_driver()

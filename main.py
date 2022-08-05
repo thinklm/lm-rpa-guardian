@@ -1,13 +1,18 @@
+## Imports
 from guardianrpa import GuardianDriver
-from drivehandler import GDriveHandler
 from localfilehandler import LocalFileHandler
 from time import sleep
 from datetime import datetime
 
 
-
+## Functions
 def gather_guardian_data () -> None:
-    print("\n\n* Operacoes com Guardian *\n")
+    """Realiza a raspagem de dados da página do Guardian com bypass de autenticação em cache.
+    OS arquivos são baixados em arquivos separados para o diretório de Downloads.
+
+    OBS: É necessário que esteja na rede com acesso à Internet e sem nenhuma página Chrome aberta.
+    """
+    print(f"[{datetime.now().strftime('%d/%m/%Y')}] -  Operacoes com o Guardian\n")
 
     driver = GuardianDriver()
     driver.enter_reports_view()
@@ -16,60 +21,44 @@ def gather_guardian_data () -> None:
 
     # Baixa os relatórios por tipo
     for tipo in ["ato", "incidente", "reconhecimento"]:        
-        driver.select_report_type(tipo=tipo)   # Seleciona Tipo de Relato
-        driver.press_export_button()             # Exporta Arquivo
-        sleep(.5)
+        driver.select_report_type(tipo=tipo)   
+        driver.press_export_button()             
+        sleep(2)
 
-    sleep(2)
-    # Fecha o driver
+    sleep(5)
     driver.quit_driver()
 
 
 
 
 def manage_local_files () -> None:
-    print("\n\n* Operacoes com arquivos locais *\n")
+    """Local files management to update safety PIs database (for Power BI)
+    """
+    print(f"[{datetime.now().strftime('%d/%m/%Y')}] -  Operacoes com Arquivos Locais\n")
 
     handler = LocalFileHandler()
     handler.move_local_files()
+    handler.read_excel_new_files()
+    handler.save_to_excel_file()
 
 
 
 
-def manage_drive_files () -> None:
-    # folder_id ='1FV2QO3cDKVu6LVZt-MsFWubbDWDHSGGG'
-    # local_base_dir = r"D:\Emanuel\Projetos\EmAndamento\lm-PIs-think\base\\"
-    print("\n\n* Operacoes com arquivos no Drive *\n")
 
-    gdrive = GDriveHandler()
+def main () -> None:
+    """Flow Control Block
+    """
+    start = datetime.now()    
+    print(f"[{datetime.now().strftime('%d/%m/%Y')}] - Iniciando script de atualizacao de base dos PIs THINK:\n\n")
 
-    folder_files = gdrive.get_drive_files()
+    gather_guardian_data()
+    sleep(5)
+    manage_local_files()
 
-    if not folder_files:
-        upload_file_list = [
-            "ato-inseguro.xlsx",
-            "incidente.xlsx",
-            "reconhecimento.xlsx"
-        ]
-        gdrive.upload_files_to_drive(file_list=upload_file_list)
-    else:
-        try:
-            for file in folder_files:
-                print(f"Replacing file: {file['title']}\t\tid: {file['id']}")
-                gdrive.replace_drive_file(file)
-        except Exception as e:
-            print(e)
-
+    end = datetime.now()
+    print(f"\nTempo decorrido: {end - start}\n\n")
 
 
 
 if __name__ == "__main__":
-    start = datetime.now()
-
-    gather_guardian_data()
-    sleep(2)
-    manage_local_files()
-    manage_drive_files()
-
-    end = datetime.now()
-    print(f"\nTempo decorrido: {end - start}\n\n")
+    main()
