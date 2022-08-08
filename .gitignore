@@ -92,3 +92,6 @@ settings.yaml
 
 # Old Files
 old.py
+
+# Database
+*.xlsx
