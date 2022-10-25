@@ -7,11 +7,15 @@ from selenium.webdriver.common.action_chains import ActionChains
 from webdriver_manager.chrome import ChromeDriverManager
 from time import sleep
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class GuardianDriver:
     def __init__(self) -> None:    # OK   
         self.driver = self.__init_driver()
+        self._base_url = os.environ.get("BASE_URL")
         
 
 
@@ -86,9 +90,9 @@ class GuardianDriver:
         finally:
             self.driver.implicitly_wait(1)
             sleep(1)
-            if self.driver.current_url == "https://guardian.ambev.com.br/home":
+            if self.driver.current_url == f"{self._base_url}home":
                 print("Login realizado com sucesso!")
-            elif self.driver.current_url == "https://guardian.ambev.com.br/login":
+            elif self.driver.current_url == f"{self._base_url}login":
                 print("Ainda na página de Login!")
             elif "https://login.microsoftonline.com/" in self.driver.current_url:
                 print("Login Automático Falhou!")
@@ -103,7 +107,7 @@ class GuardianDriver:
         print(f"[{datetime.now().strftime('%d/%m/%Y')}] -\tEntrando na view de relatorios do Guardian")
         
         try:
-            self.driver.get("https://guardian.ambev.com.br/report")  
+            self.driver.get(f"{self._base_url}report")  
             self.driver.implicitly_wait(0.5)
 
         except Exception as e:
@@ -111,7 +115,7 @@ class GuardianDriver:
             print(f"URL Final: {self.driver.current_url}")
 
         finally:
-            if self.driver.current_url == "https://guardian.ambev.com.br/login":
+            if self.driver.current_url == f"{self._base_url}login":
                 self.__guardian_login()
                 self.enter_reports_view()
             
